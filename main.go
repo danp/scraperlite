@@ -46,7 +46,6 @@ func main() {
 
 	rest := fs.Args()[1:]
 
-	type idType struct{ id, typ string }
 	sels := make(map[idType]string)
 	var ids []idType
 	for len(rest) > 0 {
@@ -70,22 +69,30 @@ func main() {
 	}
 	sort.Slice(ids, func(i, j int) bool { return fmt.Sprint(ids[i]) < fmt.Sprint(ids[j]) })
 
+	if err := run(u, dbPath, ids, sels); err != nil {
+		log.Fatal(err)
+	}
+}
+
+type idType struct{ id, typ string }
+
+func run(u, dbPath string, ids []idType, sels map[idType]string) error {
 	db, err := sql.Open("sqlite", dbPath+"?_time_format=sqlite&_pragma=foreign_keys(1)")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer db.Close()
 
 	if _, err := db.Exec("create table if not exists contents (id integer primary key, sha224 text unique, content text)"); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if _, err := db.Exec("create table if not exists observations (t datetime primary key, content_id references contents (id))"); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	resp, err := http.Get(u)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -95,7 +102,7 @@ func main() {
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	sum := sha256.New224()
@@ -130,23 +137,24 @@ func main() {
 	enc := json.NewEncoder(&b)
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(res); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	tx, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer tx.Rollback()
 
 	if _, err := db.Exec("insert into contents (sha224, content) values (?, ?) on conflict (sha224) do nothing", sum64, b.Bytes()); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if _, err := db.Exec("insert into observations (t, content_id) values (?, (select id from contents where sha224=?))", time.Now(), sum64); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
