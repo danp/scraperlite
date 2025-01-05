@@ -16,8 +16,9 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
 	"github.com/yosssi/gohtml"
-	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -77,7 +78,7 @@ func main() {
 type idType struct{ id, typ string }
 
 func run(u, dbPath string, ids []idType, sels map[idType]string) error {
-	db, err := sql.Open("sqlite", dbPath+"?_time_format=sqlite&_pragma=foreign_keys(1)")
+	db, err := sql.Open("sqlite3", "file:"+dbPath+"?_pragma=foreign_keys(1)")
 	if err != nil {
 		return err
 	}
@@ -86,7 +87,7 @@ func run(u, dbPath string, ids []idType, sels map[idType]string) error {
 	if _, err := db.Exec("create table if not exists contents (id integer primary key, sha224 text unique, content text)"); err != nil {
 		return err
 	}
-	if _, err := db.Exec("create table if not exists observations (t datetime primary key, content_id references contents (id))"); err != nil {
+	if _, err := db.Exec("create table if not exists observations (id integer primary key, t datetime, content_id references contents (id))"); err != nil {
 		return err
 	}
 
