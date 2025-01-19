@@ -15,8 +15,8 @@ scraperlite https://go.dev \
 In a sqlite3 shell:
 
 ``` shell
-sqlite> select t, substr(json_extract(content, '$.popularCLIPackages.html'), 1, 20) || '...' as popular_packages_html,
-  json_extract(content, '$.whyWebDevelopment.txt') as why_web_development
+sqlite> select t, substr(content->'popularCLIPackages'->>'html', 1, 20) || '...' as popular_packages_html,
+  content->'whyWebDevelopment'->>'txt' as why_web_development
   from observations join contents on (contents.id=content_id)
   order by t;
 +----------------------------------+-------------------------+-----------------------------------------------------------+

@@ -32,8 +32,8 @@ func main() {
 		fmt.Fprintln(fs.Output())
 		fmt.Fprintln(fs.Output(), "ids must be in the form:")
 		fmt.Fprintln(fs.Output())
-		fmt.Fprintln(fs.Output(), "x.txt:  save text of the node specified by the corresponding selector to x")
-		fmt.Fprintln(fs.Output(), "x.html: save formatted outer html of the node specified by the corresponding selector to x")
+		fmt.Fprintln(fs.Output(), "x.txt:  save text of the node specified by the corresponding selector")
+		fmt.Fprintln(fs.Output(), "x.html: save formatted outer html of the node specified by the corresponding selector")
 		fmt.Fprintln(fs.Output())
 		fs.PrintDefaults()
 	}
@@ -116,7 +116,7 @@ func run(u, dbPath string, ids []idType, sels map[idType]string) error {
 		var s string
 		switch id.typ {
 		case "html":
-			h, _ := docSel.Parent().Html()
+			h, _ := goquery.OuterHtml(docSel)
 			s = gohtml.Format(h)
 		case "txt":
 			s = docSel.Text()
